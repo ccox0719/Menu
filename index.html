@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>Weekly Meals</title>
+<style>
+  :root{
+    --bg:#f6f2ef; --card:#fff; --ink:#473c36; --muted:#8c817a; --line:#eadfd9;
+    --accent:#d9a6a0; --accent-2:#c4928b; --pill:#efe6e1;
+    --shadow:0 8px 24px rgba(60,40,30,.08);
+    --r-lg:18px; --r-md:14px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    margin:0;
+    background:
+      radial-gradient(700px 360px at 10% -10%, #f0e7e2 20%, rgba(246,242,239,0) 60%),
+      radial-gradient(700px 420px at 110% 0%, #f1e9e4 20%, rgba(246,242,239,0) 60%),
+      var(--bg);
+    color:var(--ink);
+    font:16px/1.45 ui-rounded, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
+    padding-bottom: calc(env(safe-area-inset-bottom) + 76px);
+  }
+
+  .wrap{max-width:680px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 16px 22px}
+  .hero{display:flex;align-items:center;gap:12px;justify-content:space-between;margin-bottom:12px}
+  .brand{display:flex;align-items:center;gap:12px}
+  .logo{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;background:var(--accent);color:#fff;box-shadow:var(--shadow)}
+  .title{font-weight:800;letter-spacing:.3px}
+  .range{padding:10px 14px;border-radius:999px;background:var(--pill);border:1px solid var(--line);color:var(--muted);font-weight:700}
+  .menu-btn{border:1px solid var(--line);background:var(--accent);color:#fff;border-radius:12px;box-shadow:var(--shadow);padding:10px;display:grid;place-items:center}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow);padding:14px}
+  .list{display:grid;gap:12px}
+  .row{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--line);border-radius:var(--r-md);background:#fff}
+  .row.sunday{border-left:4px solid rgba(217,166,160,.5);background:#fffaf9}
+  .day{min-width:58px;font-weight:800;letter-spacing:.3px;color:var(--muted)}
+  select{font-size:16px;flex:1;min-height:46px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);padding:10px 12px}
+  .iconbtn{width:40px;height:40px;border-radius:999px;display:grid;place-items:center;padding:0;border:1px solid var(--line);background:#fff}
+  .icon{width:20px;height:20px;display:block}
+  .muted{color:var(--muted);font-size:13px;margin-top:10px}
+
+  /* Sticky Quick Actions */
+  .actionbar{
+    position:fixed;left:0;right:0;bottom:0;z-index:55;
+    padding:8px 12px calc(8px + env(safe-area-inset-bottom));
+    background:linear-gradient(180deg, rgba(246,242,239,0), rgba(246,242,239,.85) 30%, rgba(246,242,239,.98));
+    backdrop-filter:saturate(120%) blur(4px);
+  }
+  .actionbar .inner{max-width:680px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .actionbar button{appearance:none;border:1px solid var(--line);border-radius:999px;min-height:46px;font-weight:800;letter-spacing:.2px;box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;gap:8px}
+  .action-primary{background:var(--accent);color:#fff;border-color:#d19a94}
+  .action-ghost{background:var(--pill);color:var(--ink)}
+
+  /* Slide-in Menu */
+  .sheet-backdrop{position:fixed;inset:0;background:rgba(30,20,10,.22);opacity:0;pointer-events:none;transition:.25s;z-index:50}
+  .sheet{position:fixed;top:0;right:0;height:100dvh;width:min(92vw,420px);background:var(--card);border-left:1px solid var(--line);box-shadow:-8px 0 24px rgba(0,0,0,.08);transform:translateX(100%);transition:transform .28s;z-index:60;display:flex;flex-direction:column}
+  .sheet.open{transform:none}.sheet-backdrop.open{opacity:1;pointer-events:auto}
+  .sheet header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line)}
+  .sheet h3{margin:0;font-size:18px}
+  .sheet .body{padding:12px 16px;overflow:auto}
+  .group{margin-bottom:18px}
+  .group h4{margin:0 0 8px;font-size:14px;color:var(--muted)}
+  .lib-item{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff}
+  .meta{color:var(--muted);font-size:12px}
+  input[type="text"],input[type="number"],select.inline{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--ink)}
+  .row-form-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .close-btn{border-radius:12px;padding:10px;background:var(--pill)}
+</style>
+</head>
+<body>
+  <!-- Flat SVG icons (embedded, offline) -->
+  <svg width="0" height="0" style="position:absolute">
+    <symbol id="i-menu" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+    <symbol id="i-fork" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 2v8"></path><path d="M10 2v8"></path><path d="M6 6h4"></path><path d="M18 2c0 5-6 5-6 10v10"></path>
+    </symbol>
+    <symbol id="i-target" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="8"></circle><path d="M12 2v2m0 16v2M2 12h2m16 0h2"></path><circle cx="12" cy="12" r="2"></circle>
+    </symbol>
+    <symbol id="i-next" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6M14 11v6"></path><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path>
+    </symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M21 12a9 9 0 1 1-2.64-6.36"></path><polyline points="21 3 21 9 15 9"></polyline></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></symbol>
+  </svg>
+
+  <div class="wrap">
+    <div class="hero">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"><svg class="icon" style="width:18px;height:18px"><use href="#i-fork"/></svg></div>
+        <div class="title">Weekly Meals</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <div class="range" id="range">Loading…</div>
+        <button id="openMenu" class="menu-btn" aria-label="Open menu"><svg class="icon"><use href="#i-menu"/></svg></button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="list" id="list"></div>
+      <div class="muted">Tip: tap ↻ to re-roll a day. (Sunday is subtly highlighted and pulls from Large Group.)</div>
+    </div>
+  </div>
+
+  <!-- Sticky Quick Actions -->
+  <div class="actionbar">
+    <div class="inner">
+      <button class="action-primary" id="btnThis"><svg class="icon"><use href="#i-target"/></svg> Randomize</button>
+      <button class="action-ghost" id="btnNext"><svg class="icon"><use href="#i-next"/></svg> Next</button>
+      <button class="action-ghost" id="btnClear"><svg class="icon"><use href="#i-trash"/></svg> Clear</button>
+    </div>
+  </div>
+
+  <!-- Slide-in Menu (Library, Import/Export, Add/Edit) -->
+  <div id="backdrop" class="sheet-backdrop"></div>
+  <aside id="sheet" class="sheet" aria-modal="true" aria-labelledby="menuTitle" role="dialog">
+    <header>
+      <h3 id="menuTitle">Library</h3>
+      <button id="closeMenu" class="close-btn">Close</button>
+    </header>
+    <div class="body">
+      <div class="group">
+        <h4>Find</h4>
+        <input id="q" type="text" placeholder="Search meals…">
+        <select id="fGroup" class="inline" style="margin-top:6px">
+          <option value="">All groups</option>
+          <option>Family</option><option>Company</option><option>Large Group</option>
+        </select>
+      </div>
+
+      <div class="group">
+        <h4>Meals</h4>
+        <div id="lib"></div>
+      </div>
+
+      <div class="group">
+        <h4>Add / Edit</h4>
+        <div style="display:grid;gap:8px">
+          <input id="mName" type="text" placeholder="Meal name">
+          <div class="row-form-3">
+            <input id="mCat" type="text" placeholder="Category">
+            <select id="mGroup" class="inline"><option>Family</option><option>Company</option><option>Large Group</option></select>
+            <input id="mRating" type="number" min="1" max="5" value="4" placeholder="Rating">
+          </div>
+          <label style="display:flex;align-items:center;gap:6px"><input id="mPrior" type="checkbox"> Prioritize</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button id="saveMeal">Save</button>
+            <button id="delMeal">Delete</button>
+            <button id="export">Export</button>
+            <label for="importFile" style="display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--pill);cursor:pointer">Import<input id="importFile" type="file" accept="application/json" hidden></label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+<script>
+/* ---------- Data & Persistence ---------- */
+const STORAGE_KEY = 'meals.app.v1';
+const SUNDAY = 1;                     // 0=Sat..6=Fri
+const PRESERVE = ['Leftovers','Out to Eat'];
+
+const DEFAULT_MEALS = [
+  {name:"Asian Salad",rating:3,category:"Salad/Asian",group:"Family",prior:false},
+  {name:"Bacon Ranch Popcorn Chicken Salad",rating:1,category:"Salad/American",group:"Family",prior:false},
+  {name:"Baked Potato Bar",rating:4,category:"American/Comfort",group:"Large Group",prior:false},
+  {name:"Banh Mi",rating:4,category:"Sandwich/Asian",group:"Company",prior:false},
+  {name:"BBQ Sandwiches",rating:3,category:"Sandwich/BBQ",group:"Large Group",prior:false},
+  {name:"Beef Enchiladas",rating:4,category:"Mexican",group:"Large Group",prior:false},
+  {name:"Brats",rating:5,category:"Grill/Sausage",group:"Large Group",prior:false},
+  {name:"Breakfast Burritos",rating:4,category:"Breakfast",group:"Family",prior:false},
+  {name:"Breakfast Casserole",rating:5,category:"Breakfast",group:"Large Group",prior:false},
+  {name:"Breakfast Sandwiches",rating:4,category:"Breakfast",group:"Family",prior:false},
+  {name:"Brinner",rating:5,category:"Breakfast/Dinner",group:"Family",prior:false},
+  {name:"Brisket",rating:3,category:"Grill/Beef",group:"Large Group",prior:false},
+  {name:"Buffalo Chicken Baked Ziti",rating:3,category:"Italian/Chicken",group:"Company",prior:false},
+  {name:"Buffalo Chicken Casserole",rating:3,category:"Casserole/Chicken",group:"Company",prior:false},
+  {name:"Burgers",rating:5,category:"Grill",group:"Large Group",prior:false},
+  {name:"Burnt Ends",rating:4,category:"BBQ/Beef",group:"Family",prior:false},
+  {name:"Burritos",rating:4,category:"Mexican",group:"Large Group",prior:false},
+  {name:"Casserole",rating:5,category:"Comfort",group:"Large Group",prior:false},
+  {name:"Cereal",rating:2,category:"Breakfast",group:"Family",prior:false},
+  {name:"Charcuterie",rating:3,category:"Snack/Entertaining",group:"Company",prior:false},
+  {name:"Chicago Dogs",rating:4,category:"Grill/Hot Dog",group:"Large Group",prior:false},
+  {name:"Chicken Marsala",rating:3,category:"Italian/Chicken",group:"Company",prior:false},
+  {name:"Chicken Skewers",rating:4,category:"Grill/Chicken",group:"Company",prior:false},
+  {name:"Chicken Taco Soup",rating:4,category:"Soup/Mexican",group:"Large Group",prior:false},
+  {name:"Chicken Thighs",rating:3,category:"Grill/Chicken",group:"Family",prior:false},
+  {name:"Chili",rating:4,category:"Soup/Comfort",group:"Large Group",prior:false},
+  {name:"Chili Dogs",rating:3,category:"Grill/Hot Dog",group:"Large Group",prior:false},
+  {name:"Creamy Italian Meatball Soup",rating:3,category:"Soup/Italian",group:"Family",prior:false},
+  {name:"Cuban Sandwiches",rating:5,category:"Sandwich",group:"Company",prior:false},
+  {name:"Curry",rating:3,category:"Asian",group:"Family",prior:false},
+  {name:"Date Night",rating:4,category:"Flexible",group:"Company",prior:false},
+  {name:"Drumsticks",rating:3,category:"Grill/Chicken",group:"Large Group",prior:false},
+  {name:"Egg Bake",rating:5,category:"Breakfast",group:"Large Group",prior:false},
+  {name:"Egg Hash",rating:5,category:"Breakfast",group:"Family",prior:false},
+  {name:"Egg Sandwiches",rating:4,category:"Breakfast",group:"Family",prior:false},
+  {name:"Enchiladas",rating:4,category:"Mexican",group:"Large Group",prior:false},
+  {name:"Fajitas",rating:5,category:"Mexican",group:"Company",prior:false},
+  {name:"Fish Tacos",rating:4,category:"Mexican/Seafood",group:"Company",prior:false},
+  {name:"French Toast",rating:5,category:"Breakfast",group:"Family",prior:false},
+  {name:"Fried Rice",rating:4,category:"Asian",group:"Family",prior:false},
+  {name:"Grilled Cheese",rating:4,category:"Sandwich",group:"Family",prior:false},
+  {name:"Gumbo",rating:4,category:"Cajun",group:"Large Group",prior:false},
+  {name:"Gyros",rating:5,category:"Mediterranean",group:"Company",prior:false},
+  {name:"Hot Dogs",rating:4,category:"Grill",group:"Large Group",prior:false},
+  {name:"Jambalaya",rating:4,category:"Cajun",group:"Large Group",prior:false},
+  {name:"Kabobs",rating:4,category:"Grill",group:"Company",prior:false},
+  {name:"Kofta",rating:4,category:"Mediterranean",group:"Company",prior:false},
+  {name:"Lasagna",rating:4,category:"Italian",group:"Company",prior:false},
+  {name:"Lasagna Skillet",rating:5,category:"Italian",group:"Family",prior:false},
+  {name:"Latsa",rating:2,category:"Asian/Fusion",group:"Family",prior:false},
+  {name:"Leftovers",rating:4,category:"Flexible",group:"Family",prior:false},
+  {name:"Louisiana Pasta",rating:4,category:"Cajun/Italian",group:"Company",prior:false},
+  {name:"Macaroni and Cheese",rating:4,category:"Comfort",group:"Large Group",prior:false},
+  {name:"Meatball Subs",rating:5,category:"Sandwich/Italian",group:"Large Group",prior:false},
+  {name:"Nachos",rating:5,category:"Mexican",group:"Large Group",prior:false},
+  {name:"Omelettes",rating:5,category:"Breakfast",group:"Family",prior:false},
+  {name:"Panini",rating:4,category:"Sandwich",group:"Family",prior:false},
+  {name:"Pasta",rating:3,category:"Italian",group:"Family",prior:false},
+  {name:"Philly Cheese Steak",rating:5,category:"Sandwich",group:"Company",prior:false},
+  {name:"Pigs in a Blanket",rating:3,category:"Snack/Comfort",group:"Company",prior:false},
+  {name:"Pizza",rating:5,category:"Italian",group:"Company",prior:false},
+  {name:"Pork Steak",rating:4,category:"Grill/Pork",group:"Company",prior:false},
+  {name:"Pork Tenderloin",rating:4,category:"Grill/Pork",group:"Company",prior:false},
+  {name:"Pulled Pork",rating:5,category:"Grill/Pork",group:"Large Group",prior:false},
+  {name:"Pulled Pork Sandwiches",rating:5,category:"Sandwich/BBQ",group:"Large Group",prior:false},
+  {name:"Quesadillas",rating:4,category:"Mexican",group:"Family",prior:false},
+  {name:"Ramen",rating:3,category:"Asian",group:"Family",prior:false},
+  {name:"Reubens",rating:4,category:"Sandwich",group:"Company",prior:false},
+  {name:"Ribs",rating:4,category:"BBQ",group:"Family",prior:false},
+  {name:"Rice Bowls",rating:5,category:"Asian/Fusion",group:"Large Group",prior:false},
+  {name:"Salads",rating:3,category:"Salad",group:"Family",prior:false},
+  {name:"Sausage and Rice Casserole",rating:3,category:"Casserole",group:"Large Group",prior:false},
+  {name:"Sesame Chicken",rating:4,category:"Asian",group:"Family",prior:false},
+  {name:"Shawarma",rating:4,category:"Mediterranean",group:"Company",prior:false},
+  {name:"Shrimp Po'Boy",rating:4,category:"Sandwich/Seafood",group:"Company",prior:false},
+  {name:"Smoked Meat",rating:4,category:"BBQ",group:"Large Group",prior:false},
+  {name:"Soup",rating:3,category:"Soup",group:"Large Group",prior:false},
+  {name:"Spaghetti",rating:5,category:"Italian",group:"Large Group",prior:false},
+  {name:"Steak",rating:4,category:"Grill/Beef",group:"Company",prior:false},
+  {name:"Sticky Rice",rating:4,category:"Asian",group:"Family",prior:false},
+  {name:"Stir Fry",rating:5,category:"Asian",group:"Family",prior:false},
+  {name:"Street Tacos",rating:5,category:"Mexican",group:"Family",prior:false},
+  {name:"Sub Sandwiches",rating:4,category:"Sandwich",group:"Large Group",prior:false},
+  {name:"SW Chicken Wraps",rating:4,category:"Mexican/Fusion",group:"Company",prior:false},
+  {name:"Tacos",rating:5,category:"Mexican",group:"Large Group",prior:false},
+  {name:"Torta",rating:3,category:"Mexican",group:"Company",prior:false},
+  {name:"Turkey",rating:3,category:"Grill/Roast",group:"Large Group",prior:false},
+  {name:"Waffles",rating:4,category:"Breakfast",group:"Family",prior:false},
+  {name:"Wimpy Burgers",rating:4,category:"Sandwich",group:"Family",prior:false},
+  {name:"Wings",rating:4,category:"Grill/Chicken",group:"Company",prior:false},
+];
+
+function load(){ try{return JSON.parse(localStorage.getItem(STORAGE_KEY));}catch(e){return null;} }
+function save(st){ localStorage.setItem(STORAGE_KEY, JSON.stringify(st)); }
+
+function init(){
+  let st = load();
+  if(!st){ st = { meals: DEFAULT_MEALS, plans: {} }; save(st); }
+  return st;
+}
+let STATE = init();
+
+/* ---------- Dates & Weeks ---------- */
+function startOfWeekSaturday(d=new Date()){
+  const t = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const day = t.getDay();        // 0 Sun..6 Sat
+  const diff = (day >= 6) ? (day - 6) : (day + 1); // back to Sat
+  t.setDate(t.getDate() - diff);
+  return t;
+}
+function rangeLabel(start){
+  const end = new Date(start); end.setDate(end.getDate()+6);
+  const fmt = x => x.toLocaleDateString(undefined,{month:'short',day:'numeric'});
+  return `${fmt(start)} – ${fmt(end)}`;
+}
+function weekKey(d=new Date()){ return startOfWeekSaturday(d).toISOString().slice(0,10); }
+function getWeek(d=new Date()){
+  const k = weekKey(d);
+  if(!STATE.plans[k]) STATE.plans[k] = Array(7).fill('');
+  return {key:k, meals: STATE.plans[k]};
+}
+
+/* ---------- Randomize ---------- */
+function weight(m){ return (Number(m.rating)||3) * (m.prior?2:1); }
+function pickWeighted(items){
+  const total = items.reduce((s,x)=> s + x._w, 0);
+  let r = Math.random()*total, acc=0;
+  for(const it of items){ acc+=it._w; if(r<=acc) return it; }
+  return items[items.length-1];
+}
+function varietyAdjust(pool, usedNames, byName){
+  const catCount = {};
+  for(const n of usedNames){
+    const meta = byName.get(n); if(!meta) continue;
+    const c = meta.category || '—';
+    catCount[c] = (catCount[c]||0)+1;
+  }
+  function factor(cat){ const n = catCount[cat||'—']||0;
+    if(n===0) return 2.0; if(n===1) return 1.25; if(n===2) return 0.85; return 0.7;
+  }
+  pool.forEach(it => it._w = weight(it)*factor(it.category));
+  return pool;
+}
+
+function rerollDay(i, d=new Date()){
+  const {key, meals:week} = getWeek(d);
+  const current = week[i];
+  if(PRESERVE.includes(current)) return alert(`Won't overwrite "${current}"`);
+  let pool = (i===SUNDAY) ? STATE.meals.filter(m=>m.group==='Large Group') : STATE.meals.slice();
+  const others = week.map((v,idx)=> idx===i? null : v).filter(Boolean);
+  pool = pool.filter(m=> !others.includes(m.name));
+  if(pool.length===0) pool = (i===SUNDAY) ? STATE.meals.filter(m=>m.group==='Large Group') : STATE.meals.slice();
+  const byName = new Map(STATE.meals.map(m=>[m.name,m]));
+  const adjusted = varietyAdjust(pool.map(m=>({...m})), others, byName);
+  const pick = pickWeighted(adjusted);
+  week[i] = pick.name; save(STATE); renderPlan(d);
+}
+
+function randomizeWeek(d=new Date()){
+  const {key, meals:week} = getWeek(d);
+  const byName = new Map(STATE.meals.map(m=>[m.name,m]));
+  const used = week.filter(v=> v && !PRESERVE.includes(v));
+  for(let i=0;i<7;i++){
+    if(PRESERVE.includes(week[i])) continue;
+    let pool = (i===SUNDAY) ? STATE.meals.filter(m=>m.group==='Large Group') : STATE.meals.slice();
+    pool = pool.filter(m=> !used.includes(m.name));
+    if(pool.length===0) pool = (i===SUNDAY) ? STATE.meals.filter(m=>m.group==='Large Group') : STATE.meals.slice();
+    const adjusted = varietyAdjust(pool.map(m=>({...m})), used, byName);
+    const pick = pickWeighted(adjusted);
+    week[i] = pick.name; used.push(pick.name);
+  }
+  save(STATE); renderPlan(d);
+}
+function randomizeNext(){
+  const start = startOfWeekSaturday();
+  const next = new Date(start); next.setDate(next.getDate()+7);
+  randomizeWeek(next);
+}
+function clearThisWeek(){
+  const {key} = getWeek(new Date());
+  STATE.plans[key] = Array(7).fill('');
+  save(STATE); renderPlan(new Date());
+}
+
+/* ---------- Rendering ---------- */
+const weekList = document.getElementById('list');
+const weekRange = document.getElementById('range');
+const DAYS = ['Sat','Sun','Mon','Tue','Wed','Thu','Fri'];
+
+function renderPlan(d=new Date()){
+  const start = startOfWeekSaturday(d);
+  weekRange.textContent = rangeLabel(start);
+  const {meals:week} = getWeek(d);
+  const byName = new Map(STATE.meals.map(m=>[m.name,m]));
+
+  weekList.innerHTML = '';
+  for(let i=0;i<7;i++){
+    const row = document.createElement('div');
+    row.className = 'row' + (i===SUNDAY?' sunday':'');
+    const day = document.createElement('div'); day.className='day'; day.textContent = DAYS[i];
+
+    const sel = document.createElement('select'); sel.dataset.index = i;
+    const cur = week[i];
+    if(cur && !byName.has(cur)){ const o=document.createElement('option'); o.value=cur; o.textContent=cur; sel.appendChild(o); }
+
+    const pool = (i===SUNDAY) ? STATE.meals.filter(m=>m.group==='Large Group') : STATE.meals.slice();
+    pool.sort((a,b)=> a.name.localeCompare(b.name)).forEach(m=>{
+      const o=document.createElement('option'); o.value=m.name; o.textContent=m.name; sel.appendChild(o);
+    });
+
+    sel.value = cur || '';
+    sel.addEventListener('change', ()=>{
+      const idx = Number(sel.dataset.index);
+      const {key} = getWeek(d);
+      STATE.plans[key][idx] = sel.value;
+      save(STATE);
+    });
+
+    const btn = document.createElement('button'); btn.className='iconbtn';
+    btn.innerHTML='<svg class="icon"><use href="#i-refresh"/></svg>';
+    btn.addEventListener('click', ()=> rerollDay(i,d));
+
+    row.appendChild(day); row.appendChild(sel); row.appendChild(btn);
+    weekList.appendChild(row);
+  }
+}
+
+/* ---------- Library (menu) ---------- */
+const sheet = document.getElementById('sheet');
+const backdrop = document.getElementById('backdrop');
+document.getElementById('openMenu').onclick = ()=>{ sheet.classList.add('open'); backdrop.classList.add('open'); renderLib(); };
+document.getElementById('closeMenu').onclick = ()=>{ sheet.classList.remove('open'); backdrop.classList.remove('open'); };
+backdrop.onclick = ()=>{ sheet.classList.remove('open'); backdrop.classList.remove('open'); };
+
+const libEl = document.getElementById('lib');
+function renderLib(){
+  const q = document.getElementById('q').value.trim().toLowerCase();
+  const g = document.getElementById('fGroup').value;
+  libEl.innerHTML='';
+  STATE.meals.filter(m=>{
+    if(g && m.group!==g) return false;
+    if(q && !m.name.toLowerCase().includes(q)) return false;
+    return true;
+  }).sort((a,b)=> a.name.localeCompare(b.name))
+    .forEach(m=>{
+      const item = document.createElement('div'); item.className='lib-item';
+      const left = document.createElement('div');
+      left.innerHTML = `<div style="font-weight:700">${m.name}</div><div class="meta">⭐ ${m.rating} • ${(m.category||'—')} • ${m.group}</div>`;
+      const chk = document.createElement('button'); chk.className='iconbtn';
+      chk.innerHTML = m.prior ? '<svg class="icon"><use href="#i-check"/></svg>' : '';
+      chk.title = 'Toggle prioritize';
+      chk.onclick = ()=>{ m.prior=!m.prior; save(STATE); renderLib(); };
+      const edit = document.createElement('button'); edit.className='iconbtn'; edit.innerHTML='<svg class="icon"><use href="#i-edit"/></svg>';
+      edit.onclick = ()=>{
+        mName.value = m.name; mCat.value = m.category||''; mGroup.value = m.group; mRating.value = m.rating; mPrior.checked = !!m.prior;
+      };
+      item.appendChild(left); item.appendChild(chk); item.appendChild(edit); libEl.appendChild(item);
+    });
+}
+document.getElementById('q').oninput = renderLib;
+document.getElementById('fGroup').onchange = renderLib;
+
+document.getElementById('saveMeal').onclick = ()=>{
+  const name = mName.value.trim(); if(!name) return alert('Meal name required');
+  const obj = {
+    name, category: mCat.value.trim(), group: mGroup.value,
+    rating: Math.max(1,Math.min(5,Number(mRating.value)||3)),
+    prior: !!mPrior.checked
+  };
+  const idx = STATE.meals.findIndex(x=> x.name.toLowerCase()===name.toLowerCase());
+  if(idx>=0) STATE.meals[idx] = obj; else STATE.meals.push(obj);
+  save(STATE); renderLib(); renderPlan(); alert('Saved ✔︎');
+};
+document.getElementById('delMeal').onclick = ()=>{
+  const name = mName.value.trim(); if(!name) return;
+  const idx = STATE.meals.findIndex(x=> x.name.toLowerCase()===name.toLowerCase());
+  if(idx>=0 && confirm('Delete "'+STATE.meals[idx].name+'"?')){ STATE.meals.splice(idx,1); save(STATE); renderLib(); renderPlan(); }
+};
+document.getElementById('export').onclick = ()=>{
+  const blob = new Blob([JSON.stringify(STATE,null,2)], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download='meals-data.json'; a.click(); URL.revokeObjectURL(a.href);
+};
+document.getElementById('importFile').onchange = (e)=>{
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev=>{
+    try{
+      const data = JSON.parse(ev.target.result);
+      if(!data.meals) throw new Error('Invalid file');
+      STATE = { meals: data.meals, plans: data.plans || {} };
+      save(STATE); renderLib(); renderPlan(); alert('Imported ✔︎');
+    }catch(err){ alert('Import failed: '+err.message); }
+  };
+  reader.readAsText(file);
+};
+
+/* ---------- Quick actions ---------- */
+document.getElementById('btnThis').onclick = ()=> randomizeWeek(new Date());
+document.getElementById('btnNext').onclick = randomizeNext;
+document.getElementById('btnClear').onclick = clearThisWeek;
+
+/* ---------- Init ---------- */
+renderPlan();
+</script>
+</body>
+</html>
