@@ -68,6 +68,41 @@
   input[type="text"],input[type="number"],select.inline{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--ink)}
   .row-form-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
   .close-btn{border-radius:12px;padding:10px;background:var(--pill)}
+
+  /* Plan / Shop views */
+  .view-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+  .view-tab{border:1px solid var(--line);background:var(--pill);color:var(--ink);border-radius:14px;min-height:46px;font-weight:800}
+  .view-tab.active{background:var(--accent);color:#fff;border-color:var(--accent-2)}
+  .view{display:none}.view.active{display:block}
+
+  /* Carry-forward suggestions */
+  .carry-card{display:none;margin-bottom:12px;padding:14px;border-radius:var(--r-lg);border:1px solid var(--line);background:#fffaf9;box-shadow:var(--shadow)}
+  .carry-card.show{display:block}
+  .carry-title{font-weight:850;margin-bottom:4px}
+  .carry-sub{font-size:13px;color:var(--muted);margin-bottom:10px}
+  .carry-pills{display:flex;flex-wrap:wrap;gap:8px}
+  .carry-pill{border:1px solid var(--line);background:var(--pill);color:var(--ink);border-radius:999px;padding:10px 13px;font-weight:750}
+  .notmade-btn{border:1px solid var(--line);background:#fff;color:var(--muted);border-radius:12px;min-height:40px;padding:0 10px;font-size:12px;font-weight:800;white-space:nowrap}
+  .notmade-btn.active{background:var(--pill);color:var(--ink);border-color:var(--accent)}
+  @media(max-width:520px){
+    .row{display:grid;grid-template-columns:48px 1fr 40px;gap:8px}
+    .notmade-btn{grid-column:2 / 4;width:100%;min-height:38px}
+  }
+
+  /* Minimal shopping mode */
+  .shop-card{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow);padding:14px}
+  .shop-add{display:grid;grid-template-columns:1fr auto;gap:10px;margin-bottom:14px}
+  .shop-add input{min-height:52px;font-size:17px}
+  .shop-add button{min-width:74px;border:0;border-radius:14px;background:var(--accent);color:#fff;font-weight:850;font-size:16px}
+  .shop-list{display:grid;gap:10px}
+  .shop-item{width:100%;min-height:68px;border:2px solid var(--line);border-radius:16px;background:#fff;color:var(--ink);padding:14px 16px;font-size:19px;font-weight:800;text-align:left;display:flex;align-items:center;gap:14px}
+  .shop-check{width:30px;height:30px;min-width:30px;border-radius:9px;border:2px solid var(--accent-2);display:grid;place-items:center;font-size:20px}
+  .shop-item.done{opacity:.5;text-decoration:line-through;background:var(--pill)}
+  .shop-item.done .shop-check{background:var(--accent);color:#fff}
+  .shop-section-title{font-size:13px;color:var(--muted);font-weight:850;text-transform:uppercase;letter-spacing:.8px;margin:16px 2px 8px}
+  .shop-empty{text-align:center;color:var(--muted);padding:30px 12px}
+  .shop-actions{display:flex;justify-content:flex-end;margin-top:12px}
+  .shop-actions button{border:1px solid var(--line);background:var(--pill);border-radius:12px;padding:10px 12px;font-weight:800}
 </style>
 </head>
 <body>
@@ -103,10 +138,34 @@
       </div>
     </div>
 
-    <div class="card">
-      <div class="list" id="list"></div>
-      <div class="muted">Tip: tap ↻ to re-roll a day. (Sunday is subtly highlighted and pulls from Large Group.)</div>
+    <div class="view-tabs">
+      <button class="view-tab active" id="tabPlan">Meals</button>
+      <button class="view-tab" id="tabShop">Shop</button>
     </div>
+
+    <section id="planView" class="view active">
+      <div id="carryCard" class="carry-card">
+        <div class="carry-title">Try again from last week</div>
+        <div class="carry-sub">Meals you marked “Not made.” Tap one to add it to the first open day.</div>
+        <div id="carryPills" class="carry-pills"></div>
+      </div>
+
+      <div class="card">
+        <div class="list" id="list"></div>
+        <div class="muted">Tap ↻ to re-roll a day. Mark “Not made” if plans change and you want the meal suggested next week.</div>
+      </div>
+    </section>
+
+    <section id="shopView" class="view">
+      <div class="shop-card">
+        <div class="shop-add">
+          <input id="shopInput" type="text" placeholder="Add grocery item…" autocomplete="off">
+          <button id="shopAdd">Add</button>
+        </div>
+        <div id="shopList" class="shop-list"></div>
+        <div class="shop-actions"><button id="clearBought">Clear checked</button></div>
+      </div>
+    </section>
   </div>
 
   <!-- Sticky Quick Actions -->
@@ -265,7 +324,12 @@ function save(st){ localStorage.setItem(STORAGE_KEY, JSON.stringify(st)); }
 
 function init(){
   let st = load();
-  if(!st){ st = { meals: DEFAULT_MEALS, plans: {} }; save(st); }
+  if(!st) st = { meals: DEFAULT_MEALS, plans: {} };
+  if(!st.meals) st.meals = DEFAULT_MEALS;
+  if(!st.plans) st.plans = {};
+  if(!st.unused) st.unused = {};
+  if(!st.shopping) st.shopping = [];
+  save(st);
   return st;
 }
 let STATE = init();
@@ -288,6 +352,33 @@ function getWeek(d=new Date()){
   const k = weekKey(d);
   if(!STATE.plans[k]) STATE.plans[k] = Array(7).fill('');
   return {key:k, meals: STATE.plans[k]};
+}
+function previousWeekKey(d=new Date()){
+  const start = startOfWeekSaturday(d);
+  start.setDate(start.getDate()-7);
+  return weekKey(start);
+}
+function toggleUnused(weekKeyValue, mealName){
+  if(!mealName) return;
+  if(!STATE.unused[weekKeyValue]) STATE.unused[weekKeyValue] = [];
+  const arr = STATE.unused[weekKeyValue];
+  const idx = arr.indexOf(mealName);
+  if(idx>=0) arr.splice(idx,1); else arr.push(mealName);
+  save(STATE);
+}
+function addCarryForward(mealName, d=new Date()){
+  const {key, meals:week} = getWeek(d);
+  if(week.includes(mealName)) return;
+  const open = week.findIndex(v=>!v);
+  if(open>=0) week[open] = mealName;
+  else {
+    const ok = confirm('This week is full. Replace Saturday with "'+mealName+'"?');
+    if(ok) week[0] = mealName; else return;
+  }
+  const prevKey = previousWeekKey(d);
+  if(STATE.unused[prevKey]) STATE.unused[prevKey] = STATE.unused[prevKey].filter(n=>n!==mealName);
+  save(STATE);
+  renderPlan(d);
 }
 
 /* ---------- Randomize ---------- */
@@ -360,8 +451,21 @@ const DAYS = ['Sat','Sun','Mon','Tue','Wed','Thu','Fri'];
 function renderPlan(d=new Date()){
   const start = startOfWeekSaturday(d);
   weekRange.textContent = rangeLabel(start);
-  const {meals:week} = getWeek(d);
+  const {key, meals:week} = getWeek(d);
   const byName = new Map(STATE.meals.map(m=>[m.name,m]));
+
+  const carryCard = document.getElementById('carryCard');
+  const carryPills = document.getElementById('carryPills');
+  const suggestions = (STATE.unused[previousWeekKey(d)] || []).filter(n=>!week.includes(n));
+  carryPills.innerHTML = '';
+  suggestions.forEach(name=>{
+    const b = document.createElement('button');
+    b.className = 'carry-pill';
+    b.textContent = '+ ' + name;
+    b.onclick = ()=> addCarryForward(name,d);
+    carryPills.appendChild(b);
+  });
+  carryCard.classList.toggle('show', suggestions.length>0);
 
   weekList.innerHTML = '';
   for(let i=0;i<7;i++){
@@ -381,16 +485,27 @@ function renderPlan(d=new Date()){
     sel.value = cur || '';
     sel.addEventListener('change', ()=>{
       const idx = Number(sel.dataset.index);
-      const {key} = getWeek(d);
+      const old = STATE.plans[key][idx];
       STATE.plans[key][idx] = sel.value;
+      if(old && STATE.unused[key]) STATE.unused[key] = STATE.unused[key].filter(n=>n!==old);
       save(STATE);
+      renderPlan(d);
     });
 
     const btn = document.createElement('button'); btn.className='iconbtn';
     btn.innerHTML='<svg class="icon"><use href="#i-refresh"/></svg>';
     btn.addEventListener('click', ()=> rerollDay(i,d));
 
-    row.appendChild(day); row.appendChild(sel); row.appendChild(btn);
+    const notMade = document.createElement('button');
+    notMade.className = 'notmade-btn' + ((STATE.unused[key]||[]).includes(cur)?' active':'');
+    notMade.textContent = ((STATE.unused[key]||[]).includes(cur)) ? '↪ Suggest next week' : 'Not made';
+    notMade.disabled = !cur;
+    notMade.onclick = ()=>{
+      toggleUnused(key, cur);
+      renderPlan(d);
+    };
+
+    row.appendChild(day); row.appendChild(sel); row.appendChild(btn); row.appendChild(notMade);
     weekList.appendChild(row);
   }
 }
@@ -457,11 +572,79 @@ document.getElementById('importFile').onchange = (e)=>{
     try{
       const data = JSON.parse(ev.target.result);
       if(!data.meals) throw new Error('Invalid file');
-      STATE = { meals: data.meals, plans: data.plans || {} };
-      save(STATE); renderLib(); renderPlan(); alert('Imported ✔︎');
+      STATE = { meals: data.meals, plans: data.plans || {}, unused: data.unused || {}, shopping: data.shopping || [] };
+      save(STATE); renderLib(); renderPlan(); renderShopping(); alert('Imported ✔︎');
     }catch(err){ alert('Import failed: '+err.message); }
   };
   reader.readAsText(file);
+};
+
+/* ---------- Shopping ---------- */
+const planView = document.getElementById('planView');
+const shopView = document.getElementById('shopView');
+const tabPlan = document.getElementById('tabPlan');
+const tabShop = document.getElementById('tabShop');
+const shopList = document.getElementById('shopList');
+const shopInput = document.getElementById('shopInput');
+
+function setView(which){
+  const shopping = which==='shop';
+  planView.classList.toggle('active', !shopping);
+  shopView.classList.toggle('active', shopping);
+  tabPlan.classList.toggle('active', !shopping);
+  tabShop.classList.toggle('active', shopping);
+  document.querySelector('.actionbar').style.display = shopping ? 'none' : '';
+  if(shopping){ renderShopping(); setTimeout(()=>shopInput.focus(),80); }
+}
+tabPlan.onclick = ()=>setView('plan');
+tabShop.onclick = ()=>setView('shop');
+
+function addShoppingItem(){
+  const name = shopInput.value.trim();
+  if(!name) return;
+  STATE.shopping.push({id:Date.now()+Math.random(), name, done:false});
+  shopInput.value='';
+  save(STATE); renderShopping(); shopInput.focus();
+}
+document.getElementById('shopAdd').onclick = addShoppingItem;
+shopInput.addEventListener('keydown', e=>{ if(e.key==='Enter') addShoppingItem(); });
+
+function renderShopping(){
+  shopList.innerHTML='';
+  const open = STATE.shopping.filter(x=>!x.done);
+  const done = STATE.shopping.filter(x=>x.done);
+
+  if(!STATE.shopping.length){
+    shopList.innerHTML='<div class="shop-empty">Your shopping list is empty.<br>Add an item above and it becomes a big tap-to-check button.</div>';
+    return;
+  }
+
+  function section(title, items){
+    if(!items.length) return;
+    const h = document.createElement('div'); h.className='shop-section-title'; h.textContent=title; shopList.appendChild(h);
+    items.forEach(item=>{
+      const b=document.createElement('button');
+      b.className='shop-item'+(item.done?' done':'');
+      b.innerHTML='<span class="shop-check">'+(item.done?'✓':'')+'</span><span>'+escapeHtml(item.name)+'</span>';
+      b.onclick=()=>{ item.done=!item.done; save(STATE); renderShopping(); };
+      b.addEventListener('contextmenu',e=>{
+        e.preventDefault();
+        if(confirm('Remove "'+item.name+'"?')){ STATE.shopping=STATE.shopping.filter(x=>x.id!==item.id); save(STATE); renderShopping(); }
+      });
+      shopList.appendChild(b);
+    });
+  }
+  section('Need', open);
+  section('In cart', done);
+}
+function escapeHtml(str){
+  return str.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+}
+document.getElementById('clearBought').onclick=()=>{
+  const count=STATE.shopping.filter(x=>x.done).length;
+  if(!count) return;
+  STATE.shopping=STATE.shopping.filter(x=>!x.done);
+  save(STATE); renderShopping();
 };
 
 /* ---------- Quick actions ---------- */
@@ -471,6 +654,7 @@ document.getElementById('btnClear').onclick = clearThisWeek;
 
 /* ---------- Init ---------- */
 renderPlan();
+renderShopping();
 </script>
 </body>
 </html>
