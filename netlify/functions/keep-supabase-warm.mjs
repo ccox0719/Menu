@@ -1,8 +1,8 @@
 const SUPABASE_URL =
-  process.env.SUPABASE_URL ?? "https://sggxzlhpdkqjlepbwdqf.supabase.co";
+  process.env.SUPABASE_URL ?? "https://svaozzitkajgqzacldur.supabase.co";
 const SUPABASE_ANON_KEY =
   process.env.SUPABASE_ANON_KEY ??
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNnZ3h6bGhwZGtxamxlcGJ3ZHFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI3NTUwMzMsImV4cCI6MjA1ODMzMTAzM30.qJ3KaJbiV7MAD_wHQhix3EJCJPWAEMYktAyqVocthwI";
+  "sb_publishable_scbeO9M_PR8Zvkh-1nbheA_lZLwl31b";
 const HOUSE_CODE = process.env.SUPABASE_KEEPALIVE_CODE ?? "public-meals";
 
 export const config = {
@@ -19,6 +19,7 @@ export default async () => {
     headers: {
       apikey: SUPABASE_ANON_KEY,
       Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      "Accept-Profile": "meals",
     },
   });
 
