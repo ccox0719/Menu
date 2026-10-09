@@ -10,7 +10,7 @@ export const config = {
 };
 
 export default async () => {
-  const url = new URL("/rest/v1/households", SUPABASE_URL);
+  const url = new URL("/rest/v1/meal_app_households", SUPABASE_URL);
   url.searchParams.set("select", "code");
   url.searchParams.set("code", `eq.${HOUSE_CODE}`);
   url.searchParams.set("limit", "1");
@@ -19,7 +19,6 @@ export default async () => {
     headers: {
       apikey: SUPABASE_ANON_KEY,
       Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-      "Accept-Profile": "meals",
     },
   });
 
