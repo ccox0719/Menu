@@ -936,7 +936,7 @@ input.small { min-height: 36px; padding: 6px 10px; font-size: 14px; }
 /* ── Supabase ─────────────────────── */
 const SUPABASE_URL  = "https://svaozzitkajgqzacldur.supabase.co";
 const SUPABASE_ANON = "sb_publishable_scbeO9M_PR8Zvkh-1nbheA_lZLwl31b";
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON, { db: { schema: "meals" } });
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 const HOUSE_CODE = "public-meals";
 
 /* ── State ────────────────────────── */
@@ -1142,14 +1142,14 @@ async function syncMealsTableFromState() {
     return [];
   }
 
-  const { error: upsertError } = await sb.from('meals').upsert(rows, {
+  const { error: upsertError } = await sb.from('meal_app_meals').upsert(rows, {
     onConflict: 'household_code,normalized_name',
   });
   if (upsertError) throw upsertError;
 
   const normalizedNames = [...new Set(rows.map(row => row.normalized_name))];
   const { data, error } = await sb
-    .from('meals')
+    .from('meal_app_meals')
     .select('id, household_code, name, normalized_name, rating, category, group_size, prior, is_active')
     .eq('household_code', HOUSE_CODE)
     .in('normalized_name', normalizedNames);
@@ -1165,7 +1165,7 @@ async function refreshIngredientState() {
     const mealIds = mealRows.map(row => row.id);
 
     const { data: ingredientRows, error: ingredientError } = await sb
-      .from('ingredients')
+      .from('meal_app_ingredients')
       .select('id, name, normalized_name, grocery_category, is_active')
       .eq('is_active', true)
       .order('name');
@@ -1178,7 +1178,7 @@ async function refreshIngredientState() {
 
     if (mealIds.length) {
       const { data: linkRows, error: linkError } = await sb
-        .from('meal_ingredients')
+        .from('meal_app_meal_ingredients')
         .select('id, meal_id, ingredient_id, is_main, sort_order, notes, source, inference_confidence, needs_review')
         .eq('is_main', true)
         .in('meal_id', mealIds)
@@ -1237,7 +1237,7 @@ async function saveMealIngredientLinks(meal, desiredNames) {
       grocery_category: guessGroceryCategory(name),
       is_active: true,
     }));
-    const { error: ingredientUpsertError } = await sb.from('ingredients').upsert(ingredientPayload, {
+    const { error: ingredientUpsertError } = await sb.from('meal_app_ingredients').upsert(ingredientPayload, {
       onConflict: 'normalized_name',
     });
     if (ingredientUpsertError) throw ingredientUpsertError;
@@ -1245,7 +1245,7 @@ async function saveMealIngredientLinks(meal, desiredNames) {
 
   const normalizedNames = desiredNames.map(name => normalizeKey(name));
   const { data: desiredRows, error: desiredError } = normalizedNames.length
-    ? await sb.from('ingredients').select('id, name, normalized_name').in('normalized_name', normalizedNames)
+    ? await sb.from('meal_app_ingredients').select('id, name, normalized_name').in('normalized_name', normalizedNames)
     : { data: [], error: null };
   if (desiredError) throw desiredError;
 
@@ -1256,7 +1256,7 @@ async function saveMealIngredientLinks(meal, desiredNames) {
 
   if (deleteIds.length) {
     const { error: deleteError } = await sb
-      .from('meal_ingredients')
+      .from('meal_app_meal_ingredients')
       .delete()
       .eq('meal_id', mealRow.id)
       .in('ingredient_id', deleteIds);
@@ -1274,7 +1274,7 @@ async function saveMealIngredientLinks(meal, desiredNames) {
       inference_confidence: 'high',
       needs_review: false,
     }));
-    const { error: linkUpsertError } = await sb.from('meal_ingredients').upsert(linkPayload, {
+    const { error: linkUpsertError } = await sb.from('meal_app_meal_ingredients').upsert(linkPayload, {
       onConflict: 'meal_id,ingredient_id',
     });
     if (linkUpsertError) throw linkUpsertError;
@@ -1309,7 +1309,7 @@ async function persistMealRowUpdate(oldName, meal) {
     prior: !!meal.prior,
     is_active: true,
   };
-  const { error } = await sb.from('meals').update(payload).eq('id', mealRow.id);
+  const { error } = await sb.from('meal_app_meals').update(payload).eq('id', mealRow.id);
   if (error) throw error;
 }
 
@@ -1907,27 +1907,27 @@ function pushRemoteSoon() {
   clearTimeout(pushTimer);
   pushTimer = setTimeout(async () => {
     pushing = true;
-    await sb.from('households').update({ data: STATE }).eq('code', HOUSE_CODE);
+    await sb.from('meal_app_households').update({ data: STATE }).eq('code', HOUSE_CODE);
     pushing = false;
   }, 150);
 }
 function save(st) { saveLocal(st); pushRemoteSoon(); syncMealsSoon(); }
 
 async function bootstrap() {
-  const { data, error } = await sb.from('households').select('data').eq('code', HOUSE_CODE).maybeSingle();
+  const { data, error } = await sb.from('meal_app_households').select('data').eq('code', HOUSE_CODE).maybeSingle();
   if (error) console.error('[load]', error);
   if (data?.data) {
     STATE = data.data; saveLocal(STATE); renderPlan();
   } else if (!error) {
-    await sb.from('households').insert({ code: HOUSE_CODE, data: STATE });
+    await sb.from('meal_app_households').insert({ code: HOUSE_CODE, data: STATE });
   }
   await refreshIngredientState();
   renderPlan();
   renderMealEditor();
   if (channel) { sb.removeChannel(channel); channel = null; }
   channel = sb.channel('hh-' + HOUSE_CODE)
-    .on('postgres_changes', { event: '*', schema: 'meals', table: 'households', filter: `code=eq.${HOUSE_CODE}` }, () => {
-      sb.from('households').select('data').eq('code', HOUSE_CODE).single().then(({ data }) => {
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'meal_app_households', filter: `code=eq.${HOUSE_CODE}` }, () => {
+      sb.from('meal_app_households').select('data').eq('code', HOUSE_CODE).single().then(({ data }) => {
         if (data && !pushing) {
           STATE = data.data || STATE;
           saveLocal(STATE);
@@ -1939,13 +1939,13 @@ async function bootstrap() {
   if (ingredientChannel) { sb.removeChannel(ingredientChannel); ingredientChannel = null; }
   if (INGREDIENTS_ENABLED) {
     ingredientChannel = sb.channel('ingredients-' + HOUSE_CODE)
-      .on('postgres_changes', { event: '*', schema: 'meals', table: 'meals' }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'meal_app_meals' }, () => {
         refreshIngredientState().then(() => { renderPlan(); renderMealEditor(); renderLib(); });
       })
-      .on('postgres_changes', { event: '*', schema: 'meals', table: 'ingredients' }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'meal_app_ingredients' }, () => {
         refreshIngredientState().then(() => { renderPlan(); renderMealEditor(); renderLib(); });
       })
-      .on('postgres_changes', { event: '*', schema: 'meals', table: 'meal_ingredients' }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'meal_app_meal_ingredients' }, () => {
         refreshIngredientState().then(() => { renderPlan(); renderMealEditor(); renderLib(); });
       })
       .subscribe();
