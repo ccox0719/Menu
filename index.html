@@ -2155,6 +2155,7 @@ function addWeekIngredients(wk) {
   let added = 0;
   weekMeals.forEach(mealName => {
     ingredientSummaryForMeal(mealName).forEach(ing => {
+      if (ing.grocery_category === 'skip' || ing.normalized_name === 'no-shopping-needed') return;
       if (addGItem(ing.name, ing.grocery_category, mealName)) added++;
     });
   });
