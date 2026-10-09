@@ -934,9 +934,9 @@ input.small { min-height: 36px; padding: 6px 10px; font-size: 14px; }
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 /* ── Supabase ─────────────────────── */
-const SUPABASE_URL  = "https://sggxzlhpdkqjlepbwdqf.supabase.co";
-const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNnZ3h6bGhwZGtxamxlcGJ3ZHFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI3NTUwMzMsImV4cCI6MjA1ODMzMTAzM30.qJ3KaJbiV7MAD_wHQhix3EJCJPWAEMYktAyqVocthwI";
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+const SUPABASE_URL  = "https://svaozzitkajgqzacldur.supabase.co";
+const SUPABASE_ANON = "sb_publishable_scbeO9M_PR8Zvkh-1nbheA_lZLwl31b";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON, { db: { schema: "meals" } });
 const HOUSE_CODE = "public-meals";
 
 /* ── State ────────────────────────── */
@@ -1926,7 +1926,7 @@ async function bootstrap() {
   renderMealEditor();
   if (channel) { sb.removeChannel(channel); channel = null; }
   channel = sb.channel('hh-' + HOUSE_CODE)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'households', filter: `code=eq.${HOUSE_CODE}` }, () => {
+    .on('postgres_changes', { event: '*', schema: 'meals', table: 'households', filter: `code=eq.${HOUSE_CODE}` }, () => {
       sb.from('households').select('data').eq('code', HOUSE_CODE).single().then(({ data }) => {
         if (data && !pushing) {
           STATE = data.data || STATE;
@@ -1939,13 +1939,13 @@ async function bootstrap() {
   if (ingredientChannel) { sb.removeChannel(ingredientChannel); ingredientChannel = null; }
   if (INGREDIENTS_ENABLED) {
     ingredientChannel = sb.channel('ingredients-' + HOUSE_CODE)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'meals' }, () => {
+      .on('postgres_changes', { event: '*', schema: 'meals', table: 'meals' }, () => {
         refreshIngredientState().then(() => { renderPlan(); renderMealEditor(); renderLib(); });
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'ingredients' }, () => {
+      .on('postgres_changes', { event: '*', schema: 'meals', table: 'ingredients' }, () => {
         refreshIngredientState().then(() => { renderPlan(); renderMealEditor(); renderLib(); });
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'meal_ingredients' }, () => {
+      .on('postgres_changes', { event: '*', schema: 'meals', table: 'meal_ingredients' }, () => {
         refreshIngredientState().then(() => { renderPlan(); renderMealEditor(); renderLib(); });
       })
       .subscribe();
