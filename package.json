@@ -1,0 +1,1 @@
+{"name":"family-table","version":"1.0.0","private":true,"type":"module","scripts":{"dev":"vite --host 0.0.0.0","build":"vite build","test":"node --test tests/*.test.mjs"},"dependencies":{"@supabase/supabase-js":"2.117.3","react":"19.3.0","react-dom":"19.3.0","lucide-react":"0.468.0"},"devDependencies":{"vite":"8.3.4","@vitejs/plugin-react":"6.0.1"}}

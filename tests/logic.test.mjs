@@ -1,0 +1,16 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {weekStart,addDays,deriveGroceries,suggest} from '../src/logic.mjs';
+const week='2026-10-10';const items=[{id:'tomato',name:'Tomatoes',aisle:'Produce'},{id:'salt',name:'Salt',staple:true},{id:'oil',name:'Oil',staple:true}];
+const meals=[{id:'a',name:'Tacos',base_servings:4,rating:5,group_size:'Family'},{id:'b',name:'Salad',base_servings:2,rating:4,group_size:'Company'}];
+const links=[{meal_id:'a',item_id:'tomato',quantity:2,unit:'each'},{meal_id:'b',item_id:'tomato',quantity:3,unit:'each'},{meal_id:'a',item_id:'salt',quantity:1,unit:'tsp'}];
+const plans=[{id:'p1',day:week,meal_id:'a',servings:4,status:'planned'},{id:'p2',day:addDays(week,1),meal_id:'b',servings:4,status:'planned'}];
+const derive=(p=plans,l=links,manual=[],states=[])=>deriveGroceries(p,meals,l,items,manual,states,week);
+test('Saturday weeks work across months and years',()=>{assert.equal(weekStart(new Date('2026-10-13T12:00:00')),'2026-10-10');assert.equal(weekStart(new Date('2027-01-01T12:00:00')),'2026-12-26');assert.equal(addDays('2026-12-26',6),'2027-01-01');});
+test('overlapping meals merge needs and scale servings',()=>{const r=derive();assert.equal(r.length,1);assert.equal(r[0].quantity,8);assert.deepEqual(r[0].sources,['Tacos','Salad']);});
+test('manual additions survive all meal removals and overlap in one row',()=>{const manual=[{week,item_id:'tomato',quantity:1,unit:'each'}];assert.equal(derive(plans,links,manual)[0].quantity,9);const remaining=derive([],links,manual);assert.equal(remaining.length,1);assert.equal(remaining[0].quantity,1);assert.equal(remaining[0].manual,true);});
+test('incompatible units remain distinct',()=>{const r=derive(plans,[...links.slice(0,1),{meal_id:'b',item_id:'tomato',quantity:1,unit:'lb'}]);assert.equal(r.length,2);});
+test('staples excluded automatically but allowed manually',()=>{const r=derive(plans,links,[{week,item_id:'salt',quantity:null,unit:''}]);assert.equal(r.length,2);assert.equal(r.find(x=>x.item_id==='salt').manual,true);});
+test('skipped meals no longer generate needs; cooked history remains',()=>{assert.equal(derive(plans.map(p=>({...p,status:'skipped'}))).length,0);assert.equal(derive(plans.map(p=>({...p,status:'cooked'})))[0].quantity,8);});
+test('unknown imported amounts stay unknown instead of guessed',()=>{const r=derive(plans,links.map(l=>({...l,quantity:null})));assert.equal(r[0].quantity,null);assert.equal(r[0].unknown_quantity,true);});
+test('purchase state keeps override and check independent',()=>{const r=derive(plans,links,[],[{week,item_id:'tomato',unit:'each',checked:true,quantity_override:10}]);assert.equal(r[0].checked,true);assert.equal(r[0].quantity_override,10);});
+test('suggestions exclude already planned meals and respect group sizes',()=>{assert.deepEqual(suggest(meals,[],['a'],'All',()=>0).map(x=>x.meal.id),['b']);assert.deepEqual(suggest(meals,[],[],'Family',()=>0).map(x=>x.meal.id),['a']);});
+test('other weeks do not leak into the current list',()=>{assert.equal(derive(plans.map(p=>({...p,day:'2026-10-17'}))).length,0);});
