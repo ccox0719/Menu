@@ -23,7 +23,7 @@ function App(){
  async function act(fn,message){if(busy)return;setBusy(true);setError(null);try{if(!demo&&!navigator.onLine)throw new Error('Reconnect to save changes to your shared list.');await fn();if(!demo)await reload();if(message)notify(message);}catch(e){setError(e.message||'Could not save. Please try again.');throw e;}finally{setBusy(false);}}
  function run(fn,message){return act(fn,message).catch(()=>{});}
  function go(v){setView(v);setSearch('');setFilter('All');setShopping(false);}
- const groceries=demo?deriveGroceries(data.plan,data.meals,data.meal_items,data.items,data.manual,data.shopping_state,week):data.groceries;
+ const groceries=demo?deriveGroceries(data.plan,data.meals,data.meal_items,data.items,data.manual,data.shopping_state,week):data.groceries.filter(g=>g.week===week);
  const weekPlan=data.plan.filter(p=>p.day>=week&&p.day<=addDays(week,6));const planned=weekPlan.length;
  const toBuy=groceries.filter(g=>!g.checked&&!g.have_it),completed=groceries.filter(g=>g.checked&&!g.have_it),have=groceries.filter(g=>g.have_it);
  const suggestions=suggest(data.meals,data.plan,weekPlan.map(p=>p.meal_id),group).slice(0,3);
