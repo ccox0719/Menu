@@ -32,7 +32,7 @@ Realtime changes invalidate snapshots immediately; reconnect/focus refetch and a
 
 ## Migration and verification
 
-`database/schema.sql` and `database/refinements.sql` record the applied additive migrations. **Do not rerun schema.sql on the configured project**; it has already been applied through the Supabase migration tool. All 90 meals, IDs, ratings, categories, groups, priorities, and 341 ingredient links were copied from `meals.*`. 85 inferred links keep their review flags. Originals remain unchanged. No quantities were invented. There was no legacy plan history to import.
+`database/schema.sql`, `database/refinements.sql`, and `database/privileges.sql` record the applied additive migrations. **Do not rerun schema.sql on the configured project**; it has already been applied through the Supabase migration tool. All 90 meals, IDs, ratings, categories, groups, priorities, and 341 ingredient links were copied from `meals.*`. 85 inferred links keep their review flags. Originals remain unchanged. No quantities were invented. There was no legacy plan history to import.
 
 `database/verify.sql` runs transactional integration assertions and rolls everything back: member access, unrelated-user isolation, grocery aggregation, serving scaling, staple exclusion, skipping, manual survival, and independent state updates. `tests/logic.test.mjs` checks the corresponding demo behavior and date boundaries.
 
