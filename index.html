@@ -131,8 +131,21 @@ body:has(#app.plan-screen)>header{flex:0 0 auto}
 .tabs{padding:7px 12px calc(7px + env(safe-area-inset-bottom))}
 }
 @media(max-height:720px) and (max-width:600px){#app.plan-screen .planner-heading{margin:0}#app.plan-screen .plan-actions{margin:2px 0 6px}#app.plan-screen>.stack{gap:4px}#app.plan-screen .meal-row{padding:3px 7px}}
+
+/* Center every SVG within its touch target, independent of font metrics */
+.action-icon,.planner-heading .weeknav button,.meal-row .reroll,.meal-row .row-more{
+display:inline-flex!important;align-items:center!important;justify-content:center!important;
+padding:0!important;line-height:1!important;vertical-align:middle;
+}
+.action-icon .ui-icon,.planner-heading .weeknav .ui-icon,.meal-row .reroll .ui-icon,.meal-row .row-more .ui-icon{
+display:block!important;flex:0 0 auto;position:static;margin:0!important;transform:none;
+}
+.tabs button{display:flex!important;align-items:center!important;justify-content:center!important;gap:7px;line-height:1.2}
+.tabs button .ui-icon{display:block;flex:0 0 auto;margin:0}
+.grocery-shortcut{gap:5px!important}
+.grocery-shortcut>svg{display:block;flex:0 0 auto;margin:0}
 </style></head><body><header><div class="between"><div class="logo">gather<span>.</span></div><div class="header-detail"><span class="subtitle" id="sync">Connecting…</span><span class="gather-accent" aria-hidden="true"><svg viewBox="0 0 36 36" width="28" height="28" fill="none"><circle cx="18" cy="18" r="12" stroke="currentColor" stroke-width="1.2" opacity=".45"/><path d="M13 24c0-8 4-14 11-15-1 7-5 11-11 11M13 24l8-12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div></div></header><main id="app"></main><nav class="tabs" id="tabs"></nav><div id="overlay"></div><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script><script>
-const BUILD='gather-1.1.1',CODE='public-meals',db=supabase.createClient('https://svaozzitkajgqzacldur.supabase.co',"sb_publishable_scbeO9M_PR8Zvkh-1nbheA_lZLwl31b",{db:{schema:'public'}}),D=['Sat','Sun','Mon','Tue','Wed','Thu','Fri'],C=['Produce','Meat','Seafood','Dairy','Bakery','Frozen','Pantry','Household','Other'];
+const BUILD='gather-1.1.2',CODE='public-meals',db=supabase.createClient('https://svaozzitkajgqzacldur.supabase.co',"sb_publishable_scbeO9M_PR8Zvkh-1nbheA_lZLwl31b",{db:{schema:'public'}}),D=['Sat','Sun','Mon','Tue','Wed','Thu','Fri'],C=['Produce','Meat','Seafood','Dairy','Bakery','Frozen','Pantry','Household','Other'];
 const $=s=>document.querySelector(s),norm=s=>String(s||'').trim().toLowerCase().replace(/\s+/g,' '),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),shift=(s,n)=>{let d=new Date(s+'T12:00:00');d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)},week=()=>{let d=new Date();d.setDate(d.getDate()-(d.getDay()+1)%7);return d.toISOString().slice(0,10)},date=s=>new Date(s+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'});
 let S={tab:'plan',week:week(),shop:week(),meals:[],ingredients:[],links:[],data:{},ready:false,search:'',edit:null,store:false};
 const current=()=>S.data.plans?.[S.week]||{},purchases=id=>S.links.filter(l=>l.meal_id===id).map(l=>S.ingredients.find(i=>i.id===l.ingredient_id)).filter(Boolean);
