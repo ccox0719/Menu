@@ -1,0 +1,106 @@
+npm run build
+netlify deploy --prod
+
+git add .
+git commit -m "update"
+git push
+
+npm run deploy   # build + commit + push
+npm run backup   # snapshot dist/ locally
+
+gh auth login
+gh auth logout
+gh auth status
+
+next edits: 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
