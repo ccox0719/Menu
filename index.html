@@ -149,6 +149,32 @@ display:block!important;flex:0 0 auto;position:static;margin:0!important;transfo
 .announce-groceries{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--soft);border:0;border-radius:16px;padding:12px 16px;margin:12px 0 0;min-height:58px}.announce-groceries span{flex:1}.announce-groceries strong{display:block;font-size:14.5px}.announce-groceries small{display:block;font-size:12.5px;color:var(--muted);margin-top:2px}
 .announce-actions{display:grid;gap:8px;margin-top:18px}.announce-actions button{min-height:50px;font-size:15px;font-weight:650}
 .clear-cart{min-height:36px;padding:0 14px;border-radius:20px;font-size:13px;font-weight:650;background:var(--soft);border:0}
+
+/* Button polish */
+button{font-weight:600;letter-spacing:-.1px;transition:background .15s,transform .12s,box-shadow .15s,border-color .15s}
+button:active:not(:disabled){transform:scale(.97)}
+button:focus-visible{outline:2px solid #140f1f;outline-offset:2px}
+button.primary{background:#fedb71;border-color:#f3cb54;color:#140f1f;font-weight:750;box-shadow:0 1px 0 #ffffff80 inset,0 3px 10px #e3af2538}
+button.primary:hover:not(:disabled){background:#fcd35a}
+button.primary:active:not(:disabled){box-shadow:0 1px 3px #e3af2538}
+.sheet>button:not(.primary):not(.ghost):not(.announce-groceries),.sheet .toolbar button:not(.primary),[data-action="store"]:not(.primary),[data-action="new"],.announce-actions button:not(.primary){background:#fff;border:1px solid #ece5da;box-shadow:0 1px 2px #140f1f0a}
+.sheet>button:not(.primary):not(.ghost):not(.announce-groceries):hover,.announce-actions button:not(.primary):hover{background:#fcfaf6}
+.sheet>button[data-pick],.sheet>button[data-hosting],.sheet>button[data-missed],.sheet>button[data-clear-day]{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:52px;margin-top:8px;text-align:left;padding:0 16px;border-radius:14px}
+.sheet>button[data-pick] span,.sheet>button[data-hosting] span,.sheet>button[data-missed] span,.sheet>button[data-clear-day] span{color:#b3a98f;font-size:20px}
+.announce-groceries{background:#fff2cd;border:1px solid #f3e2a8;color:var(--ink);box-shadow:none}
+.announce-actions button{min-height:52px;border-radius:16px;font-size:15.5px}
+.announce-actions .primary{box-shadow:0 1px 0 #ffffff80 inset,0 6px 16px #e3af2544}
+.clear-cart{background:#fff2cd;color:#6b5314;border:1px solid #f3e2a8;box-shadow:none;margin-left:8px}
+.clear-cart:hover{background:#ffe9a8}
+.usuals button{border:1px solid #f3e2a8;font-weight:550}
+.usuals button.added{border-color:#ece5da}
+.adjust button{min-width:40px;min-height:40px;border-radius:12px;background:#fff;box-shadow:0 1px 2px #140f1f0a}
+.manual-form button{min-width:76px;font-weight:750}
+.tabs button{font-weight:650;border-radius:16px}
+.tabs button.active{box-shadow:0 2px 8px #e3af2540}
+.action-icon{border:1px solid #efe9df}
+.action-icon.grocery-shortcut{border-color:#f3cb54;box-shadow:0 2px 8px #e3af2538}
+button:disabled{opacity:.45;box-shadow:none}
 </style></head><body><header><div class="between"><div class="logo">gather<span>.</span></div><div class="header-detail"><span class="subtitle" id="sync">Connecting…</span><span class="gather-accent" aria-hidden="true"><svg viewBox="0 0 36 36" width="28" height="28" fill="none"><circle cx="18" cy="18" r="12" stroke="currentColor" stroke-width="1.2" opacity=".45"/><path d="M13 24c0-8 4-14 11-15-1 7-5 11-11 11M13 24l8-12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div></div></header><main id="app"></main><nav class="tabs" id="tabs"></nav><div id="overlay"></div><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script><script>
 const BUILD='gather-1.2.0',CODE='public-meals',db=supabase.createClient('https://svaozzitkajgqzacldur.supabase.co',"sb_publishable_scbeO9M_PR8Zvkh-1nbheA_lZLwl31b",{db:{schema:'public'}}),D=['Sat','Sun','Mon','Tue','Wed','Thu','Fri'],C=['Produce','Meat','Seafood','Dairy','Bakery','Frozen','Pantry','Household','Other'];
 const $=s=>document.querySelector(s),norm=s=>String(s||'').trim().toLowerCase().replace(/\s+/g,' '),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),shift=(s,n)=>{let d=new Date(s+'T12:00:00');d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)},week=()=>{let d=new Date();d.setDate(d.getDate()-(d.getDay()+1)%7);return d.toISOString().slice(0,10)},date=s=>new Date(s+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'});
