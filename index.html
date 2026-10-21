@@ -229,7 +229,7 @@ more:'<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="1
 const icon=n=>'<svg class="ui-icon" viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+ICONS[n]+'</svg>';
 function render(){if(!S.ready)return;$('#tabs').innerHTML=[['plan','Plan'],['shop','Shop'],['meals','Meals']].map(([k,v])=>'<button class="'+(S.tab===k?'active':'')+'" data-tab="'+k+'">'+icon(k)+'<span>'+v+'</span></button>').join('');document.body.classList.toggle('shopping-mode',S.store);$('#app').className=S.store?'store':S.tab==='plan'?'plan-screen':'';$('#app').innerHTML=S.tab==='plan'?renderPlan():S.tab==='shop'?renderShop():renderMeals()}
 let announced=false;
-function announceTonight(){if(announced||S.store)return;announced=true;let now=new Date(),key=now.toLocaleDateString('en-CA');try{if(localStorage.getItem('gather-announced')===key)return;localStorage.setItem('gather-announced',key)}catch(e){}
+function announceTonight(){if(announced||S.store)return;announced=true;let now=new Date();
  let wk=week(),n=(now.getDay()+1)%7,day=S.data.plans?.[wk]?.[n]||{},m=S.meals.find(x=>x.id===day.meal);S.week=wk;
  let need=m&&!day.notMade?shopping(wk).filter(x=>!x.checked&&x.sources.includes(m.name)):[],sub=m?[m.category,m.group_size].filter(Boolean).map(esc).join(' · '):'';
  $('#overlay').innerHTML='<div class="overlay"><div class="sheet announce" role="dialog" aria-modal="true" aria-label="Tonight’s dinner"><span class="eyebrow">'+now.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'})+'</span><p class="announce-lead">Tonight’s dinner</p>'
