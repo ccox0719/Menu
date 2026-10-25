@@ -186,7 +186,7 @@ button:disabled{opacity:.45;box-shadow:none}
 .plan-actions .action-icon:active{transform:scale(.96)}
 @media(max-width:370px){.plan-actions .ai-label{display:none}}
 </style></head><body><header><div class="between"><div class="logo">gather<span>.</span></div><div class="header-detail"><span class="subtitle" id="sync">Connecting…</span><span class="gather-accent" aria-hidden="true"><svg viewBox="0 0 36 36" width="28" height="28" fill="none"><circle cx="18" cy="18" r="12" stroke="currentColor" stroke-width="1.2" opacity=".45"/><path d="M13 24c0-8 4-14 11-15-1 7-5 11-11 11M13 24l8-12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div></div></header><main id="app"></main><nav class="tabs" id="tabs"></nav><div id="overlay"></div><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script><script>
-const BUILD='gather-1.3.0',CODE='public-meals',db=supabase.createClient('https://svaozzitkajgqzacldur.supabase.co',"sb_publishable_scbeO9M_PR8Zvkh-1nbheA_lZLwl31b",{db:{schema:'public'}}),D=['Sat','Sun','Mon','Tue','Wed','Thu','Fri'],C=['Produce','Meat','Seafood','Dairy','Bakery','Frozen','Pantry','Household','Other'];
+const BUILD='gather-1.3.1',CODE='public-meals',db=supabase.createClient('https://svaozzitkajgqzacldur.supabase.co',"sb_publishable_scbeO9M_PR8Zvkh-1nbheA_lZLwl31b",{db:{schema:'public'}}),D=['Sat','Sun','Mon','Tue','Wed','Thu','Fri'],C=['Produce','Meat','Seafood','Dairy','Bakery','Frozen','Pantry','Household','Other'];
 const $=s=>document.querySelector(s),norm=s=>String(s||'').trim().toLowerCase().replace(/\s+/g,' '),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),shift=(s,n)=>{let d=new Date(s+'T12:00:00');d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)},week=()=>{let d=new Date();d.setDate(d.getDate()-(d.getDay()+1)%7);return d.toISOString().slice(0,10)},date=s=>new Date(s+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'});
 let lastRemote='',baseline={},saving=false,pendingSync=false,refreshing=false,saveQueue=Promise.resolve();
 let S={tab:'plan',week:week(),shop:week(),meals:[],ingredients:[],links:[],data:{},ready:false,search:'',edit:null,store:false};
@@ -306,8 +306,16 @@ more:'<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="1
 };
 const icon=n=>'<svg class="ui-icon" viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+ICONS[n]+'</svg>';
 function render(){if(!S.ready)return;$('#tabs').innerHTML=[['plan','Plan'],['shop','Shop'],['meals','Meals']].map(([k,v])=>'<button class="'+(S.tab===k?'active':'')+'" data-tab="'+k+'">'+icon(k)+'<span>'+v+'</span></button>').join('');document.body.classList.toggle('shopping-mode',S.store);$('#app').className=S.store?'store':S.tab==='plan'?'plan-screen':'';$('#app').innerHTML=S.tab==='plan'?renderPlan():S.tab==='shop'?renderShop():renderMeals()}
-let announced=false;
-function announceTonight(){if(announced||S.store)return;announced=true;let now=new Date();
+let announcedTodayInMemory='';
+function announceTonight(){
+ if(S.store)return;
+ const now=new Date(),today=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
+ const key='gather:dinner-announcement-date';
+ if(announcedTodayInMemory===today)return;
+ try{if(localStorage.getItem(key)===today)return}catch(e){console.warn('Daily popup preference unavailable',e)}
+ announcedTodayInMemory=today;
+ try{localStorage.setItem(key,today)}catch(e){console.warn('Daily popup preference not saved',e)}
+
  let wk=week(),n=(now.getDay()+1)%7,day=S.data.plans?.[wk]?.[n]||{},m=S.meals.find(x=>x.id===day.meal);S.week=wk;
  let need=m&&!day.notMade?shopping(wk).filter(x=>!x.checked&&x.sources.includes(m.name)):[],sub=m?[m.category,m.group_size].filter(Boolean).map(esc).join(' · '):'';
  $('#overlay').innerHTML='<div class="overlay"><div class="sheet announce" role="dialog" aria-modal="true" aria-label="Tonight’s dinner"><span class="eyebrow">'+now.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'})+'</span><p class="announce-lead">Tonight’s dinner</p>'
