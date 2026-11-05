@@ -337,7 +337,8 @@ load();
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){refreshShared();if(S.ready&&S.week===shift(week(),-7))navigateWeek(week())}});
 window.addEventListener('focus',()=>{refreshShared();if(S.ready&&S.week!==week()&&S.week===shift(week(),-7))navigateWeek(week())});
 window.addEventListener('online',refreshShared);
-setInterval(()=>{if(saving)pendingSync=true;else refreshShared()},8000);
+// Realtime and focus events deliver changes immediately; this is only a fallback.
+setInterval(()=>{if(saving)pendingSync=true;else refreshShared()},300000);
 db.channel('gather-household-sync').on('postgres_changes',{event:'UPDATE',schema:'public',table:'meal_app_households',filter:'code=eq.'+CODE},()=>{if(saving)pendingSync=true;else refreshShared()}).subscribe();
 </script></body></html>
 
